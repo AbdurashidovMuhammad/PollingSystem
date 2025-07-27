@@ -1,36 +1,48 @@
 
-namespace Polling.Api
+using Polling.Application;
+using Polling.DataAccess;
+using Polling.DataAccess.Persistence;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddApplication(builder.Environment, builder.Configuration)
+                .AddDataAccess(builder.Configuration);
+
+builder.Services.AddCors(options =>
 {
-    public class Program
+    options.AddPolicy("CorsPolicy", policy =>
     {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+        policy.AllowAnyOrigin()//WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
-            // Add services to the container.
+var app = builder.Build();
 
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+using var scope = app.Services.CreateScope();
 
-            var app = builder.Build();
+await AutomatedMigration.MigrateAsync(scope.ServiceProvider);
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 
-            app.MapControllers();
+app.UseHttpsRedirection();
 
-            app.Run();
-        }
-    }
-}
+app.UseCors("CorsPolicy");
+
+app.UseAuthorization();
+
+
+app.MapControllers();
+
+app.Run();
+
