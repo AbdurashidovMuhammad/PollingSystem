@@ -22,6 +22,4 @@ public static class DataAccessDependencyInjection
             options.UseNpgsql(connectionString,
                 opt => opt.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
     }
-
-
 }
